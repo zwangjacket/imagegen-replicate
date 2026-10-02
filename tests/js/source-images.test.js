@@ -100,4 +100,18 @@ describe("setupSourceImages", () => {
     expect(sourceImages.payload()).toEqual({ editMode: false, sourceImages: [] });
     expect(document.querySelector(".edit-toggle").disabled).toBe(true);
   });
+
+  it("enables edit mode and adds a source image directly", () => {
+    renderSourceWorkspace();
+    const sourceImages = setupSourceImages(document, {
+      getModel: () => ({ edit_capable: true, source_image_max: 2 }),
+    });
+
+    expect(sourceImages.isEditMode()).toBe(false);
+    sourceImages.add("first.png");
+
+    expect(sourceImages.isEditMode()).toBe(true);
+    expect(sourceImages.selected()).toEqual(["first.png"]);
+    expect(document.querySelector(".source-counter").textContent).toBe("1 selected");
+  });
 });

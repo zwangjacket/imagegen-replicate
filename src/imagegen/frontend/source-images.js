@@ -102,6 +102,28 @@ export function setupSourceImages(root = document, services = {}) {
     update();
   }
 
+  function add(filename) {
+    if (!filename) {
+      return;
+    }
+    const model = getModel();
+    if (model?.edit_capable) {
+      editModeEnabled = true;
+    }
+    const limit = sourceImageLimit(model);
+    if (limit > 0 && selectedSourceImages.size >= limit) {
+      sourceStatus(
+        `Select up to ${limit} source image${limit === 1 ? "" : "s"}.`,
+        true,
+      );
+      update();
+      return;
+    }
+    selectedSourceImages.add(filename);
+    sourceStatus("");
+    update();
+  }
+
   function resetForProviderChange() {
     selectedSourceImages.clear();
     editModeEnabled = false;
@@ -145,6 +167,7 @@ export function setupSourceImages(root = document, services = {}) {
   });
 
   return {
+    add,
     clear,
     isEditMode: () => editModeEnabled,
     payload,

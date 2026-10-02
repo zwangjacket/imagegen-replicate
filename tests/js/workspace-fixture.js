@@ -49,7 +49,8 @@ export function renderWorkspace({ modelRegistry = [], selectedProvider = "" } = 
       <div class="trash-gallery"></div>
       <div class="trash-empty-state" hidden></div>
     </div>
-    <div class="draw-overlay" hidden>
+    <div class="draw-overlay" data-api-upload-url="/api/images/import-upload" hidden>
+      <h2 id="draw-title">Draw Pad</h2>
       <button class="draw-close" type="button"></button>
       <canvas class="draw-canvas"></canvas>
       <button class="draw-save" type="button"></button>

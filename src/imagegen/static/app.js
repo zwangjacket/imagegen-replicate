@@ -592,10 +592,11 @@
 	var BACKGROUND_COLOR = "#ffffff";
 	var MAX_UNDO_SNAPSHOTS = 25;
 	function setupDrawPad(root = document, services = {}) {
-		const { csrfToken = "", refreshGallery = async () => {}, showMessage = () => {} } = services;
+		const { csrfToken = "", imageFactory = () => new Image(), onSavedImage = async () => {}, refreshGallery = async () => {}, showMessage = () => {} } = services;
 		const toggleButton = root.querySelector(".draw-toggle");
 		const overlay = root.querySelector(".draw-overlay");
 		const closeButton = overlay?.querySelector(".draw-close");
+		const titleElement = overlay?.querySelector("#draw-title");
 		const canvas = overlay?.querySelector(".draw-canvas");
 		const colorPicker = overlay?.querySelector(".draw-color-picker");
 		const swatches = overlay?.querySelectorAll(".draw-swatch");
@@ -606,7 +607,7 @@
 		const clearButton = overlay?.querySelector(".draw-clear");
 		const saveButton = overlay?.querySelector(".draw-save");
 		const statusElement = overlay?.querySelector(".draw-status");
-		const uploadUrl = overlay?.dataset?.apiUploadUrl || "";
+		const uploadUrl = overlay?.dataset?.apiUploadUrl || "/api/images/import-upload";
 		const ctx = canvas?.getContext ? canvas.getContext("2d") : null;
 		const history = createHistoryStack(MAX_UNDO_SNAPSHOTS);
 		let currentColor = DEFAULT_COLOR;
@@ -614,7 +615,6 @@
 		let isEraser = false;
 		let isDrawing = false;
 		let lastPoint = null;
-		let isInitialized = false;
 		let isBusy = false;
 		function setStatus(text, category = "info") {
 			if (!statusElement) return;
@@ -643,10 +643,25 @@
 			if (!ctx || !canvas) return;
 			initializeCanvas(ctx, canvas.width, canvas.height, BACKGROUND_COLOR);
 		}
-		function initIfNeeded() {
-			if (isInitialized || !canvas || !ctx) return;
-			resetCanvas();
-			isInitialized = true;
+		function loadImage(src) {
+			if (!canvas || !ctx) return;
+			const img = imageFactory();
+			img.crossOrigin = "anonymous";
+			img.onload = () => {
+				const w = img.naturalWidth || img.width || 512;
+				const h = img.naturalHeight || img.height || 512;
+				canvas.width = w;
+				canvas.height = h;
+				ctx.drawImage(img, 0, 0, w, h);
+				history.clear();
+				const snapshot = takeSnapshot();
+				if (snapshot) history.push(snapshot);
+				if (undoButton) undoButton.disabled = true;
+			};
+			img.onerror = () => {
+				setStatus("Could not load image onto canvas.", "error");
+			};
+			img.src = src;
 		}
 		function updateColor(color) {
 			currentColor = color;
@@ -750,7 +765,8 @@
 				});
 				await refreshGallery();
 				const filename = data?.image?.filename;
-				showMessage(filename ? `Saved ${filename} to gallery.` : "Drawing saved to gallery.", "success");
+				if (filename) await onSavedImage(filename);
+				showMessage(filename ? `Saved ${filename} and added to edit sources.` : "Drawing saved to gallery.", "success");
 				close();
 			} catch (error) {
 				setStatus(error.message || "Failed to save drawing.", "error");
@@ -758,14 +774,33 @@
 				setBusy(false);
 			}
 		}
-		function open() {
+		function open(figure = null) {
 			if (!overlay) return;
-			initIfNeeded();
+			const filename = figure?.dataset?.filename;
+			const imageUrl = figure?.querySelector("img")?.src;
+			if (filename && imageUrl) {
+				overlay.dataset.filename = filename;
+				if (titleElement) titleElement.textContent = `Draw: ${filename}`;
+				overlay.hidden = false;
+				setStatus(`Draw over ${filename}, pick colors, and save.`);
+				loadImage(imageUrl);
+				return;
+			}
+			delete overlay.dataset.filename;
+			if (titleElement) titleElement.textContent = "Draw Pad";
+			if (canvas) {
+				canvas.width = 512;
+				canvas.height = 512;
+			}
+			resetCanvas();
+			history.clear();
+			if (undoButton) undoButton.disabled = true;
 			overlay.hidden = false;
 			setStatus("Illustrate with mouse or pointer, pick colors, and save to gallery.");
 		}
 		function close() {
 			if (!overlay) return;
+			delete overlay.dataset.filename;
 			overlay.hidden = true;
 			isDrawing = false;
 			lastPoint = null;
@@ -773,7 +808,7 @@
 		function isOpen() {
 			return Boolean(overlay && !overlay.hidden);
 		}
-		toggleButton?.addEventListener("click", open);
+		toggleButton?.addEventListener("click", () => open());
 		closeButton?.addEventListener("click", close);
 		swatches?.forEach((swatch) => {
 			swatch.addEventListener("click", () => {
@@ -2122,6 +2157,20 @@
 			sourceStatus("");
 			update();
 		}
+		function add(filename) {
+			if (!filename) return;
+			const model = getModel();
+			if (model?.edit_capable) editModeEnabled = true;
+			const limit = sourceImageLimit(model);
+			if (limit > 0 && selectedSourceImages.size >= limit) {
+				sourceStatus(`Select up to ${limit} source image${limit === 1 ? "" : "s"}.`, true);
+				update();
+				return;
+			}
+			selectedSourceImages.add(filename);
+			sourceStatus("");
+			update();
+		}
 		function resetForProviderChange() {
 			selectedSourceImages.clear();
 			editModeEnabled = false;
@@ -2157,6 +2206,7 @@
 			sourceStatus("");
 		});
 		return {
+			add,
 			clear,
 			isEditMode: () => editModeEnabled,
 			payload,
@@ -2585,13 +2635,17 @@
 		});
 		drawPadWorkflow = setupDrawPad(documentRoot, {
 			csrfToken,
+			onSavedImage: async (filename) => {
+				sourceWorkflow.add(filename);
+				updateSourceSelectionUi();
+			},
 			refreshGallery,
 			showMessage
 		});
 		galleryWorkflow = setupGallery(documentRoot, {
 			csrfToken,
 			metadata: metadataWorkflow,
-			openMaskEditor: (figure) => imageEditorWorkflow.open(figure),
+			openMaskEditor: (figure) => drawPadWorkflow.open(figure),
 			removeSourceImage: (filename) => sourceWorkflow.remove(filename),
 			setTrashCount: (value) => trashWorkflow.setCount(value),
 			showMessage,

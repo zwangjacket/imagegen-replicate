@@ -465,13 +465,17 @@ export function setupWorkspace(root = document) {
   });
   drawPadWorkflow = setupDrawPad(documentRoot, {
     csrfToken,
+    onSavedImage: async (filename) => {
+      sourceWorkflow.add(filename);
+      updateSourceSelectionUi();
+    },
     refreshGallery,
     showMessage,
   });
   galleryWorkflow = setupGallery(documentRoot, {
     csrfToken,
     metadata: metadataWorkflow,
-    openMaskEditor: (figure) => imageEditorWorkflow.open(figure),
+    openMaskEditor: (figure) => drawPadWorkflow.open(figure),
     removeSourceImage: (filename) => sourceWorkflow.remove(filename),
     setTrashCount: (value) => trashWorkflow.setCount(value),
     showMessage,

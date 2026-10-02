@@ -279,4 +279,65 @@ describe("setupDrawPad", () => {
     expect(refreshGallery).toHaveBeenCalledOnce();
     expect(document.querySelector(".draw-overlay").hidden).toBe(true);
   });
+
+  it("opens with an existing gallery figure and loads the image onto the canvas", () => {
+    let createdImg = null;
+    const drawPad = setupDrawPad(document, {
+      imageFactory: () => {
+        createdImg = {
+          crossOrigin: "",
+          naturalHeight: 400,
+          naturalWidth: 400,
+          src: "",
+        };
+        return createdImg;
+      },
+    });
+
+    const figure = document.createElement("figure");
+    figure.dataset.filename = "source.png";
+    const img = document.createElement("img");
+    img.src = "/images/source.png";
+    figure.append(img);
+
+    drawPad.open(figure);
+
+    const overlay = document.querySelector(".draw-overlay");
+    expect(overlay.hidden).toBe(false);
+    expect(overlay.dataset.filename).toBe("source.png");
+    expect(document.querySelector("#draw-title").textContent).toBe("Draw: source.png");
+    expect(createdImg.src).toContain("/images/source.png");
+
+    createdImg.onload();
+    expect(ctx.drawImage).toHaveBeenCalledWith(createdImg, 0, 0, 400, 400);
+
+    drawPad.close();
+    expect(overlay.hidden).toBe(true);
+    expect(overlay.dataset.filename).toBeUndefined();
+  });
+
+  it("saves the drawing to the gallery and invokes onSavedImage callback", async () => {
+    const onSavedImage = vi.fn(async () => {});
+    const refreshGallery = vi.fn(async () => {});
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        image: { filename: "import-12345.png" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    setupDrawPad(document, {
+      csrfToken: "test-csrf",
+      onSavedImage,
+      refreshGallery,
+    });
+    document.querySelector(".draw-toggle").click();
+
+    const saveBtn = document.querySelector(".draw-save");
+    saveBtn.click();
+
+    await vi.waitFor(() => {
+      expect(onSavedImage).toHaveBeenCalledWith("import-12345.png");
+    });
+  });
 });

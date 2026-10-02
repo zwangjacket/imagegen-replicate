@@ -47,3 +47,31 @@ Implement `draw-pad.js` providing the modal overlay, color swatches, brush sizin
 - `npm run js:check`
 - `uv run pytest`
 - `uv run ruff check src tests`
+
+---
+
+## Ticket 3: Override Existing Edit Tool & Auto-Add to Source Edit Files
+
+### Goal
+Override the older image editor so gallery "Edit" buttons open the Draw Pad with the target image loaded, and automatically add saved illustrations to the active edit source list.
+
+### Scope
+- `draw-pad.js`:
+  - Support `open(figure)` loading the figure's `img.src` onto the canvas with proper dimensions.
+  - Call `onSavedImage(filename)` callback after successful save and gallery refresh.
+- `source-images.js`:
+  - Add `add(filename)` to `sourceWorkflow` to enable Edit mode and select the filename.
+- `workspace.js`:
+  - Route `galleryWorkflow.openMaskEditor` directly to `drawPadWorkflow.open(figure)`.
+  - Pass `onSavedImage` to `setupDrawPad` to automatically add the saved drawing to `sourceWorkflow`.
+- Tests:
+  - Add tests in `tests/js/draw-pad.test.js` and `tests/js/workspace.test.js` verifying image loading onto canvas, edit tool override, and automatic source image selection.
+
+### Verification
+- `tests/js/draw-pad.test.js` (10 tests passing)
+- `tests/js/source-images.test.js` (5 tests passing)
+- `tests/js/workspace.test.js` (6 tests passing)
+- `npm run js:check` (16 test files, 121 tests passing, vite build clean)
+- `uv run pytest` (559 passed)
+- `uv run ruff check src tests` (All checks passed)
+

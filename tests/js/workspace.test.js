@@ -260,7 +260,7 @@ test("workspace loads metadata into the selected model and edit controls", async
   );
 });
 
-test("workspace opens the image editor from a gallery action", async () => {
+test("workspace opens the draw pad from a gallery edit action", async () => {
   renderWorkspace({
     modelRegistry: generationModelRegistry,
     selectedProvider: "replicate",
@@ -269,10 +269,6 @@ test("workspace opens the image editor from a gallery action", async () => {
     <figure
       class="gallery-item"
       data-filename="source.png"
-      data-blur-save-url="/api/images/source.png/blur"
-      data-crop-save-url="/api/images/source.png/crop"
-      data-mask-url="/images/source-mask.png"
-      data-mask-save-url="/api/images/source-mask.png"
     >
       <img alt="source.png" src="/images/source.png">
       <button class="gallery-mask" type="button"></button>
@@ -283,8 +279,63 @@ test("workspace opens the image editor from a gallery action", async () => {
 
   document.querySelector(".gallery-mask").click();
 
-  const overlay = document.querySelector(".mask-editor-overlay");
+  const overlay = document.querySelector(".draw-overlay");
   expect(overlay.hidden).toBe(false);
   expect(overlay.dataset.filename).toBe("source.png");
-  expect(document.querySelector("#mask-editor-title").textContent).toBe("source.png");
+  expect(document.querySelector("#draw-title").textContent).toBe("Draw: source.png");
+});
+
+test("workspace adds saved drawing to source images and enables edit mode", async () => {
+  renderWorkspace({
+    modelRegistry: generationModelRegistry,
+    selectedProvider: "replicate",
+  });
+
+  const fetcher = vi.fn((url) => {
+    if (url === "/api/images/import-upload") {
+      return Promise.resolve(
+        jsonResponse({
+          image: { filename: "drawn-123.png" },
+        }),
+      );
+    }
+    if (url === "/api/images") {
+      return Promise.resolve(
+        jsonResponse({
+          images: [{ filename: "drawn-123.png", url: "/images/drawn-123.png" }],
+          trash_count: 0,
+        }),
+      );
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  vi.stubGlobal("fetch", fetcher);
+
+  HTMLCanvasElement.prototype.getContext = () => ({
+    fillRect: () => {},
+    getImageData: () => ({ data: new Uint8ClampedArray(4) }),
+    putImageData: () => {},
+  });
+  HTMLCanvasElement.prototype.toBlob = function (callback, type = "image/png") {
+    callback(new Blob(["test-draw"], { type }));
+  };
+
+  await import("../../src/imagegen/frontend/main.js");
+
+  document.querySelector(".draw-toggle").click();
+  expect(document.querySelector(".draw-overlay").hidden).toBe(false);
+
+  document.querySelector(".draw-save").click();
+
+  await vi.waitFor(() => {
+    expect(document.querySelector(".draw-overlay").hidden).toBe(true);
+  });
+
+  expect(document.querySelector(".edit-toggle").getAttribute("aria-pressed")).toBe(
+    "true",
+  );
+  expect(document.querySelector(".source-counter").textContent).toBe("1 selected");
+  expect(document.querySelector(".messages").textContent).toContain(
+    "Saved drawn-123.png and added to edit sources.",
+  );
 });

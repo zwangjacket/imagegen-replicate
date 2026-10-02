@@ -15,6 +15,8 @@ const MAX_UNDO_SNAPSHOTS = 25;
 export function setupDrawPad(root = document, services = {}) {
   const {
     csrfToken = "",
+    imageFactory = () => new Image(),
+    onSavedImage = async () => {},
     refreshGallery = async () => {},
     showMessage = () => {},
   } = services;
@@ -22,6 +24,7 @@ export function setupDrawPad(root = document, services = {}) {
   const toggleButton = root.querySelector(".draw-toggle");
   const overlay = root.querySelector(".draw-overlay");
   const closeButton = overlay?.querySelector(".draw-close");
+  const titleElement = overlay?.querySelector("#draw-title");
   const canvas = overlay?.querySelector(".draw-canvas");
   const colorPicker = overlay?.querySelector(".draw-color-picker");
   const swatches = overlay?.querySelectorAll(".draw-swatch");
@@ -33,7 +36,7 @@ export function setupDrawPad(root = document, services = {}) {
   const saveButton = overlay?.querySelector(".draw-save");
   const statusElement = overlay?.querySelector(".draw-status");
 
-  const uploadUrl = overlay?.dataset?.apiUploadUrl || "";
+  const uploadUrl = overlay?.dataset?.apiUploadUrl || "/api/images/import-upload";
   const ctx = canvas?.getContext ? canvas.getContext("2d") : null;
   const history = createHistoryStack(MAX_UNDO_SNAPSHOTS);
 
@@ -42,7 +45,6 @@ export function setupDrawPad(root = document, services = {}) {
   let isEraser = false;
   let isDrawing = false;
   let lastPoint = null;
-  let isInitialized = false;
   let isBusy = false;
 
   function setStatus(text, category = "info") {
@@ -91,12 +93,31 @@ export function setupDrawPad(root = document, services = {}) {
     initializeCanvas(ctx, canvas.width, canvas.height, BACKGROUND_COLOR);
   }
 
-  function initIfNeeded() {
-    if (isInitialized || !canvas || !ctx) {
+  function loadImage(src) {
+    if (!canvas || !ctx) {
       return;
     }
-    resetCanvas();
-    isInitialized = true;
+    const img = imageFactory();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const w = img.naturalWidth || img.width || 512;
+      const h = img.naturalHeight || img.height || 512;
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      history.clear();
+      const snapshot = takeSnapshot();
+      if (snapshot) {
+        history.push(snapshot);
+      }
+      if (undoButton) {
+        undoButton.disabled = true;
+      }
+    };
+    img.onerror = () => {
+      setStatus("Could not load image onto canvas.", "error");
+    };
+    img.src = src;
   }
 
   function updateColor(color) {
@@ -258,8 +279,13 @@ export function setupDrawPad(root = document, services = {}) {
 
       await refreshGallery();
       const filename = data?.image?.filename;
+      if (filename) {
+        await onSavedImage(filename);
+      }
       showMessage(
-        filename ? `Saved ${filename} to gallery.` : "Drawing saved to gallery.",
+        filename
+          ? `Saved ${filename} and added to edit sources.`
+          : "Drawing saved to gallery.",
         "success",
       );
       close();
@@ -270,11 +296,37 @@ export function setupDrawPad(root = document, services = {}) {
     }
   }
 
-  function open() {
+  function open(figure = null) {
     if (!overlay) {
       return;
     }
-    initIfNeeded();
+    const filename = figure?.dataset?.filename;
+    const imageUrl = figure?.querySelector("img")?.src;
+
+    if (filename && imageUrl) {
+      overlay.dataset.filename = filename;
+      if (titleElement) {
+        titleElement.textContent = `Draw: ${filename}`;
+      }
+      overlay.hidden = false;
+      setStatus(`Draw over ${filename}, pick colors, and save.`);
+      loadImage(imageUrl);
+      return;
+    }
+
+    delete overlay.dataset.filename;
+    if (titleElement) {
+      titleElement.textContent = "Draw Pad";
+    }
+    if (canvas) {
+      canvas.width = 512;
+      canvas.height = 512;
+    }
+    resetCanvas();
+    history.clear();
+    if (undoButton) {
+      undoButton.disabled = true;
+    }
     overlay.hidden = false;
     setStatus("Illustrate with mouse or pointer, pick colors, and save to gallery.");
   }
@@ -283,6 +335,7 @@ export function setupDrawPad(root = document, services = {}) {
     if (!overlay) {
       return;
     }
+    delete overlay.dataset.filename;
     overlay.hidden = true;
     isDrawing = false;
     lastPoint = null;
@@ -293,7 +346,7 @@ export function setupDrawPad(root = document, services = {}) {
   }
 
   // Wire event listeners
-  toggleButton?.addEventListener("click", open);
+  toggleButton?.addEventListener("click", () => open());
   closeButton?.addEventListener("click", close);
 
   swatches?.forEach((swatch) => {

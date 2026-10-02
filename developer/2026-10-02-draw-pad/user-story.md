@@ -40,7 +40,17 @@ without needing external drawing software.
      the new drawing card, ready for previewing or toggling as an edit source image.
    - The Draw Pad provides clear success feedback and closes or resets.
 
-5. **Security & Validation**:
+5. **Overriding Existing Edit Tool**:
+   - Clicking the "Edit image" action on any gallery card opens the Draw Pad with
+     that image loaded directly onto the canvas for freehand drawing and illustration.
+   - Replaces the older limited mask/blur editor as the primary editing workflow.
+
+6. **Automatic Edit Source Selection**:
+   - When saving any drawing (whether drawn from scratch or over an existing image),
+     the application automatically activates Edit mode (if the current model is edit-capable)
+     and adds the newly saved image to the active source images list.
+
+7. **Security & Validation**:
    - CSRF protection is enforced on upload submission.
    - Saved drawings are validated by backend image import safeguards (decoded
      pixel limits, collision-safe filenames, metadata embedding).
