@@ -26,10 +26,24 @@ def test_index_renders_workspace_form_and_api_hooks(app_factory):
     response = client.get("/")
     checksum = extract_app_checksum(response)
     elements = parse_html(response)
-    form = next(element for element in elements if element["attrs"].get("class") == "prompt-form")
-    provider = next(element for element in elements if element["attrs"].get("id") == "provider-selector")
-    model = next(element for element in elements if element["attrs"].get("id") == "model-selector")
-    messages = next(element for element in elements if element["attrs"].get("class") == "messages")
+    form = next(
+        element
+        for element in elements
+        if element["attrs"].get("class") == "prompt-form"
+    )
+    provider = next(
+        element
+        for element in elements
+        if element["attrs"].get("id") == "provider-selector"
+    )
+    model = next(
+        element
+        for element in elements
+        if element["attrs"].get("id") == "model-selector"
+    )
+    messages = next(
+        element for element in elements if element["attrs"].get("class") == "messages"
+    )
 
     assert response.status_code == 200
     assert len(checksum) == 16
@@ -60,9 +74,14 @@ def test_index_renders_generation_controls(app_factory):
     assert {"size", "aspect_ratio", "max_images"} <= names
     assert "image_input" not in names
     assert "disable_safety_checker" not in names
-    assert any(attr.get("value") == "seedream45" and "selected" in attr for attr in attrs)
+    assert any(
+        attr.get("value") == "seedream45" and "selected" in attr for attr in attrs
+    )
     assert any(element["text"].strip() == "Generate" for element in elements)
-    assert any("$0.04 per output image or 25 images for $1" in element["text"] for element in elements)
+    assert any(
+        "$0.04 per output image or 25 images for $1" in element["text"]
+        for element in elements
+    )
 
 
 def test_index_renders_accessible_image_editor_dialog(app_factory):
@@ -75,9 +94,11 @@ def test_index_renders_accessible_image_editor_dialog(app_factory):
     assert {"mask-editor-source", "mask-editor-mask", "mask-editor-canvas-wrap"} <= {
         attr.get("class") for attr in attrs
     }
-    assert {"mask-editor-brush-size", "mask-editor-brush-falloff", "mask-editor-blur-radius"} <= {
-        attr.get("class") for attr in attrs
-    }
+    assert {
+        "mask-editor-brush-size",
+        "mask-editor-brush-falloff",
+        "mask-editor-blur-radius",
+    } <= {attr.get("class") for attr in attrs}
     assert {"mask-editor-invert", "mask-editor-save", "mask-editor-close"} <= {
         attr.get("class") for attr in attrs
     }
@@ -187,7 +208,11 @@ def test_index_falls_back_when_configured_model_is_unavailable(app_config, app_f
     response = app_factory(IMAGEGEN_APP_CONFIG=configured).test_client().get("/")
     registry = extract_model_registry(response)
     assert {model["provider"] for model in registry} == {"falai"}
-    options = [element["attrs"] for element in parse_html(response) if element["tag"] == "option"]
+    options = [
+        element["attrs"]
+        for element in parse_html(response)
+        if element["tag"] == "option"
+    ]
     assert any(
         option.get("value") == "bria-fibo" and "selected" in option
         for option in options
@@ -407,6 +432,9 @@ def test_index_renders_trashcan_button_and_overlay_shell(app_config, app_factory
         response.data.index(b'class="upload-toggle"')
     )
     assert response.data.index(b'class="upload-toggle"') < (
+        response.data.index(b'class="draw-toggle"')
+    )
+    assert response.data.index(b'class="draw-toggle"') < (
         response.data.index(b'class="palette-editor-toggle"')
     )
     assert response.data.index(b'class="palette-editor-toggle"') < (
@@ -455,6 +483,28 @@ def test_index_renders_upload_button_and_overlay_shell(app_factory):
     assert b'class="upload-immich-browser"' not in response.data
     assert b"data-api-immich-assets-url" not in response.data
     assert b"data-api-immich-import-url" not in response.data
+
+
+def test_index_renders_draw_button_and_overlay_shell(app_factory):
+    client = app_factory().test_client()
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert b'class="draw-toggle"' in response.data
+    assert b'class="draw-overlay"' in response.data
+    assert b'id="draw-title">Draw Pad' in response.data
+    assert b'data-api-upload-url="/api/images/import-upload"' in response.data
+    assert b'class="draw-close"' in response.data
+    assert b'class="draw-palette"' in response.data
+    assert b'class="draw-swatch active"' in response.data
+    assert b'class="draw-color-picker"' in response.data
+    assert b'class="draw-brush-size"' in response.data
+    assert b'class="draw-eraser"' in response.data
+    assert b'class="draw-undo"' in response.data
+    assert b'class="draw-clear"' in response.data
+    assert b'class="draw-canvas"' in response.data
+    assert b'class="draw-save"' in response.data
 
 
 def test_index_renders_upload_immich_browser_when_configured(

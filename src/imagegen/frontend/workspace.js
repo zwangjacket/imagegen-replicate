@@ -2,6 +2,7 @@ import { requestJson } from "./api.js";
 import { readJsonScript } from "./dom.js";
 import { setupGallery } from "./gallery.js";
 import { setupGeneration } from "./generation.js";
+import { setupDrawPad } from "./draw-pad.js";
 import { setupImageUpload } from "./image-upload.js";
 import { setupImageEditor } from "./image-editor.js";
 import { setupMetadata } from "./metadata.js";
@@ -48,6 +49,7 @@ export function setupWorkspace(root = document) {
   let generationWorkflow = null;
   let imageEditorWorkflow = null;
   let uploadWorkflow = null;
+  let drawPadWorkflow = null;
 
   function selectedProvider() {
     return providerSelector?.value || null;
@@ -461,6 +463,11 @@ export function setupWorkspace(root = document) {
     csrfToken,
     refreshGallery,
   });
+  drawPadWorkflow = setupDrawPad(documentRoot, {
+    csrfToken,
+    refreshGallery,
+    showMessage,
+  });
   galleryWorkflow = setupGallery(documentRoot, {
     csrfToken,
     metadata: metadataWorkflow,
@@ -508,6 +515,10 @@ export function setupWorkspace(root = document) {
     updateSourceSelectionUi();
   });
   documentRoot.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && drawPadWorkflow.isOpen()) {
+      drawPadWorkflow.close();
+      return;
+    }
     if (event.key === "Escape" && imageEditorWorkflow.isOpen()) {
       imageEditorWorkflow.close();
       return;

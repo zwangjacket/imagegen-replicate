@@ -90,6 +90,16 @@
                 <span>Upload</span>
               </button>
               <button
+                class="draw-toggle"
+                type="button"
+                aria-haspopup="dialog"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                <span>Draw</span>
+              </button>
+              <button
                 class="palette-editor-toggle"
                 type="button"
                 {% if not palettes %}hidden{% endif %}
@@ -430,6 +440,67 @@
           <div class="upload-immich-gallery" aria-label="Immich images"></div>
         </section>
         {% endif %}
+      </div>
+    </div>
+    <div
+      class="draw-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="draw-title"
+      data-api-upload-url="{{ url_for('api_import_uploaded_image') }}"
+      hidden
+    >
+      <div class="draw-pane">
+        <div class="draw-bar">
+          <h2 id="draw-title">Draw Pad</h2>
+          <button class="draw-close" type="button" aria-label="Close draw pad" title="Close">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="draw-toolbar">
+          <div class="draw-palette" role="radiogroup" aria-label="Color palette">
+            <button class="draw-swatch active" type="button" data-color="#000000" aria-label="Black" aria-checked="true" style="--swatch-color: #000000"></button>
+            <button class="draw-swatch" type="button" data-color="#4b5563" aria-label="Gray" aria-checked="false" style="--swatch-color: #4b5563"></button>
+            <button class="draw-swatch" type="button" data-color="#ffffff" aria-label="White" aria-checked="false" style="--swatch-color: #ffffff"></button>
+            <button class="draw-swatch" type="button" data-color="#ef4444" aria-label="Red" aria-checked="false" style="--swatch-color: #ef4444"></button>
+            <button class="draw-swatch" type="button" data-color="#f97316" aria-label="Orange" aria-checked="false" style="--swatch-color: #f97316"></button>
+            <button class="draw-swatch" type="button" data-color="#eab308" aria-label="Yellow" aria-checked="false" style="--swatch-color: #eab308"></button>
+            <button class="draw-swatch" type="button" data-color="#22c55e" aria-label="Green" aria-checked="false" style="--swatch-color: #22c55e"></button>
+            <button class="draw-swatch" type="button" data-color="#3b82f6" aria-label="Blue" aria-checked="false" style="--swatch-color: #3b82f6"></button>
+            <button class="draw-swatch" type="button" data-color="#a855f7" aria-label="Purple" aria-checked="false" style="--swatch-color: #a855f7"></button>
+            <button class="draw-swatch" type="button" data-color="#78350f" aria-label="Brown" aria-checked="false" style="--swatch-color: #78350f"></button>
+          </div>
+          <label class="draw-color-picker-wrap" title="Custom color">
+            <input class="draw-color-picker" type="color" value="#000000" aria-label="Custom color picker">
+          </label>
+          <div class="draw-brush-size-wrap">
+            <label for="draw-brush-size">Size</label>
+            <input id="draw-brush-size" class="draw-brush-size" type="range" min="1" max="64" value="6">
+            <span class="draw-brush-size-value">6 px</span>
+          </div>
+          <div class="draw-tool-buttons">
+            <button class="draw-eraser" type="button" aria-pressed="false" title="Eraser">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.5H2v-2l8.83-8.83L6.34 5.18c-.78-.79-.78-2.05 0-2.84l2.83-2.83c.79-.78 2.05-.78 2.83 0l4.24 4.05zm-4.24 4.05L7.76 3.37 4.93 6.2 9.17 10.44l2.83-2.83zm1.41 1.41l-2.83 2.83 5.66 5.66 2.83-2.83-5.66-5.66z"/></svg>
+              <span>Eraser</span>
+            </button>
+            <button class="draw-undo" type="button" disabled title="Undo">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+              <span>Undo</span>
+            </button>
+            <button class="draw-clear" type="button" title="Clear canvas">Clear</button>
+          </div>
+        </div>
+        <div class="draw-canvas-stage">
+          <canvas class="draw-canvas" width="512" height="512" aria-label="Illustration drawing pad"></canvas>
+        </div>
+        <div class="draw-footer">
+          <p class="draw-status" aria-live="polite"></p>
+          <div class="draw-actions">
+            <button class="draw-save" type="button">Save to Gallery</button>
+          </div>
+        </div>
       </div>
     </div>
   </body>

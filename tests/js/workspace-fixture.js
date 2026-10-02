@@ -40,6 +40,7 @@ export function renderWorkspace({ modelRegistry = [], selectedProvider = "" } = 
       <button class="trashcan-toggle" type="button"></button>
       <span class="trashcan-count"></span>
       <button class="upload-toggle" type="button"></button>
+      <button class="draw-toggle" type="button"></button>
     </form>
     <div class="gallery"></div>
     <div class="trash-overlay" hidden>
@@ -47,6 +48,11 @@ export function renderWorkspace({ modelRegistry = [], selectedProvider = "" } = 
       <button class="trash-empty" type="button"></button>
       <div class="trash-gallery"></div>
       <div class="trash-empty-state" hidden></div>
+    </div>
+    <div class="draw-overlay" hidden>
+      <button class="draw-close" type="button"></button>
+      <canvas class="draw-canvas"></canvas>
+      <button class="draw-save" type="button"></button>
     </div>
     <div class="upload-overlay" hidden>
       <button class="upload-close" type="button"></button>

@@ -212,6 +212,7 @@ textarea {
 
 .palette-editor-toggle,
 .trashcan-toggle,
+.draw-toggle,
 .upload-toggle,
 .palette-editor-actions button {
   background: #ffffff;
@@ -230,6 +231,7 @@ textarea {
   font-weight: 650;
 }
 
+.draw-toggle,
 .trashcan-toggle,
 .upload-toggle {
   align-items: center;
@@ -237,6 +239,7 @@ textarea {
   gap: 0.375rem;
 }
 
+.draw-toggle svg,
 .trashcan-toggle svg,
 .upload-toggle svg {
   fill: currentColor;
@@ -257,6 +260,8 @@ textarea {
   padding: 0.0625rem 0.375rem;
 }
 
+.draw-toggle:hover,
+.draw-toggle:focus-visible,
 .palette-editor-toggle:hover,
 .palette-editor-toggle:focus-visible,
 .trashcan-toggle:hover,
@@ -467,6 +472,7 @@ select {
   color: #1d4ed8;
 }
 
+.draw-overlay,
 .mask-editor-overlay,
 .trash-overlay,
 .upload-overlay {
@@ -480,6 +486,7 @@ select {
   z-index: 20;
 }
 
+.draw-overlay[hidden],
 .mask-editor-overlay[hidden],
 .trash-overlay[hidden],
 .upload-overlay[hidden] {
@@ -1421,3 +1428,242 @@ select {
     order: 3;
   }
 }
+
+.draw-pane {
+  background: #ffffff;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
+  box-sizing: border-box;
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 auto;
+  max-height: calc(100vh - 2rem);
+  max-width: 44rem;
+  overflow: auto;
+  padding: 1rem;
+  width: 100%;
+}
+
+.draw-bar {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.draw-bar h2 {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.draw-close {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  padding: 0;
+  width: 2rem;
+}
+
+.draw-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.draw-toolbar {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.draw-palette {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.draw-swatch {
+  background-color: var(--swatch-color, #000000);
+  border: 2px solid #cbd5e1;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
+  cursor: pointer;
+  height: 1.75rem;
+  padding: 0;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  width: 1.75rem;
+}
+
+.draw-swatch:hover {
+  transform: scale(1.15);
+}
+
+.draw-swatch.active {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #0f766e;
+  transform: scale(1.15);
+}
+
+.draw-color-picker-wrap {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.75rem;
+  overflow: hidden;
+  position: relative;
+  width: 1.75rem;
+}
+
+.draw-color-picker {
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  height: 200%;
+  margin: -50%;
+  padding: 0;
+  width: 200%;
+}
+
+.draw-brush-size-wrap {
+  align-items: center;
+  display: flex;
+  font-size: 0.875rem;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.draw-brush-size {
+  cursor: pointer;
+  width: 5.5rem;
+}
+
+.draw-brush-size-value {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.75rem;
+  text-align: right;
+}
+
+.draw-tool-buttons {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.draw-tool-buttons button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.8125rem;
+  gap: 0.25rem;
+  height: 2rem;
+  padding: 0 0.625rem;
+}
+
+.draw-tool-buttons button svg {
+  fill: currentColor;
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.draw-tool-buttons button:not(:disabled):hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.draw-tool-buttons button.draw-tool-active,
+.draw-tool-buttons button[aria-pressed="true"] {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #ffffff;
+}
+
+.draw-tool-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.draw-canvas-stage {
+  align-items: center;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.draw-canvas {
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+  cursor: crosshair;
+  display: block;
+  height: min(512px, calc(100vw - 4rem));
+  image-rendering: auto;
+  touch-action: none;
+  width: min(512px, calc(100vw - 4rem));
+}
+
+.draw-footer {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.draw-status {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.draw-status-error {
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+.draw-status-success {
+  color: #047857;
+  font-weight: 500;
+}
+
+.draw-save {
+  background: #0f766e;
+  border: 1px solid #0f766e;
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  height: 2.25rem;
+  padding: 0 1rem;
+}
+
+.draw-save:not(:disabled):hover {
+  background: #115e59;
+}
+
+.draw-save:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+

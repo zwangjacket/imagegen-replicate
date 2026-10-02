@@ -180,9 +180,7 @@ test("workspace submits the selected model, parameters, and source images", asyn
   await scheduled.shift()();
   await Promise.resolve();
   expect(statusPolls).toBe(1);
-  expect(document.querySelector(".messages").textContent).toContain(
-    "provider started",
-  );
+  expect(document.querySelector(".messages").textContent).toContain("provider started");
   expect(document.querySelector(".generate-button").disabled).toBe(true);
 
   await scheduled.shift()();

@@ -526,6 +526,283 @@
 		};
 	}
 	//#endregion
+	//#region src/imagegen/frontend/draw-pad-operations.js
+	function pointerCanvasPosition(event, rect, canvasWidth, canvasHeight) {
+		if (!event || !rect || rect.width <= 0 || rect.height <= 0 || !canvasWidth || !canvasHeight) return null;
+		const x = (event.clientX - rect.left) / rect.width * canvasWidth;
+		const y = (event.clientY - rect.top) / rect.height * canvasHeight;
+		return {
+			x: Math.max(0, Math.min(canvasWidth, x)),
+			y: Math.max(0, Math.min(canvasHeight, y))
+		};
+	}
+	function initializeCanvas(context, width, height, backgroundColor = "#ffffff") {
+		if (!context || !width || !height) return;
+		context.fillStyle = backgroundColor;
+		context.fillRect(0, 0, width, height);
+	}
+	function drawDot(context, point, options = {}) {
+		if (!context || !point) return;
+		const { backgroundColor = "#ffffff", color = "#000000", isEraser = false, size = 6 } = options;
+		const radius = Math.max(size / 2, .5);
+		context.beginPath();
+		context.fillStyle = isEraser ? backgroundColor : color;
+		context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+		context.fill();
+	}
+	function drawLineSegment(context, fromPoint, toPoint, options = {}) {
+		if (!context || !fromPoint || !toPoint) return;
+		const { backgroundColor = "#ffffff", color = "#000000", isEraser = false, size = 6 } = options;
+		context.beginPath();
+		context.strokeStyle = isEraser ? backgroundColor : color;
+		context.lineWidth = size;
+		context.lineCap = "round";
+		context.lineJoin = "round";
+		context.moveTo(fromPoint.x, fromPoint.y);
+		context.lineTo(toPoint.x, toPoint.y);
+		context.stroke();
+	}
+	function createHistoryStack(maxSnapshots = 20) {
+		const stack = [];
+		return {
+			canUndo() {
+				return stack.length > 0;
+			},
+			clear() {
+				stack.length = 0;
+			},
+			pop() {
+				if (stack.length === 0) return null;
+				return stack.pop();
+			},
+			push(item) {
+				if (item === void 0 || item === null) return;
+				if (stack.length >= maxSnapshots) stack.shift();
+				stack.push(item);
+			},
+			size() {
+				return stack.length;
+			}
+		};
+	}
+	//#endregion
+	//#region src/imagegen/frontend/draw-pad.js
+	var DEFAULT_BRUSH_SIZE$1 = 6;
+	var DEFAULT_COLOR = "#000000";
+	var BACKGROUND_COLOR = "#ffffff";
+	var MAX_UNDO_SNAPSHOTS = 25;
+	function setupDrawPad(root = document, services = {}) {
+		const { csrfToken = "", refreshGallery = async () => {}, showMessage = () => {} } = services;
+		const toggleButton = root.querySelector(".draw-toggle");
+		const overlay = root.querySelector(".draw-overlay");
+		const closeButton = overlay?.querySelector(".draw-close");
+		const canvas = overlay?.querySelector(".draw-canvas");
+		const colorPicker = overlay?.querySelector(".draw-color-picker");
+		const swatches = overlay?.querySelectorAll(".draw-swatch");
+		const brushSizeInput = overlay?.querySelector(".draw-brush-size");
+		const brushSizeValue = overlay?.querySelector(".draw-brush-size-value");
+		const eraserButton = overlay?.querySelector(".draw-eraser");
+		const undoButton = overlay?.querySelector(".draw-undo");
+		const clearButton = overlay?.querySelector(".draw-clear");
+		const saveButton = overlay?.querySelector(".draw-save");
+		const statusElement = overlay?.querySelector(".draw-status");
+		const uploadUrl = overlay?.dataset?.apiUploadUrl || "";
+		const ctx = canvas?.getContext ? canvas.getContext("2d") : null;
+		const history = createHistoryStack(MAX_UNDO_SNAPSHOTS);
+		let currentColor = DEFAULT_COLOR;
+		let brushSize = DEFAULT_BRUSH_SIZE$1;
+		let isEraser = false;
+		let isDrawing = false;
+		let lastPoint = null;
+		let isInitialized = false;
+		let isBusy = false;
+		function setStatus(text, category = "info") {
+			if (!statusElement) return;
+			statusElement.textContent = text || "";
+			statusElement.className = "draw-status";
+			if (text) statusElement.classList.add(`draw-status-${category}`);
+		}
+		function setBusy(busy) {
+			isBusy = busy;
+			if (saveButton) {
+				saveButton.disabled = busy;
+				saveButton.setAttribute("aria-busy", String(busy));
+			}
+			if (clearButton) clearButton.disabled = busy;
+			if (undoButton) undoButton.disabled = busy || !history.canUndo();
+		}
+		function takeSnapshot() {
+			if (!ctx || !canvas) return null;
+			return ctx.getImageData(0, 0, canvas.width, canvas.height);
+		}
+		function restoreSnapshot(snapshot) {
+			if (!ctx || !snapshot) return;
+			ctx.putImageData(snapshot, 0, 0);
+		}
+		function resetCanvas() {
+			if (!ctx || !canvas) return;
+			initializeCanvas(ctx, canvas.width, canvas.height, BACKGROUND_COLOR);
+		}
+		function initIfNeeded() {
+			if (isInitialized || !canvas || !ctx) return;
+			resetCanvas();
+			isInitialized = true;
+		}
+		function updateColor(color) {
+			currentColor = color;
+			isEraser = false;
+			if (eraserButton) {
+				eraserButton.setAttribute("aria-pressed", "false");
+				eraserButton.classList.remove("draw-tool-active");
+			}
+			if (colorPicker && colorPicker.value !== color) colorPicker.value = color;
+			swatches?.forEach((swatch) => {
+				const match = swatch.dataset.color?.toLowerCase() === color.toLowerCase();
+				swatch.classList.toggle("active", match);
+				swatch.setAttribute("aria-checked", String(match));
+			});
+		}
+		function updateBrushSize(size) {
+			brushSize = Math.max(1, Math.min(64, Number.parseInt(size, 10) || DEFAULT_BRUSH_SIZE$1));
+			if (brushSizeValue) brushSizeValue.textContent = `${brushSize} px`;
+		}
+		function toggleEraser() {
+			isEraser = !isEraser;
+			if (eraserButton) {
+				eraserButton.setAttribute("aria-pressed", String(isEraser));
+				eraserButton.classList.toggle("draw-tool-active", isEraser);
+			}
+			if (isEraser) swatches?.forEach((swatch) => {
+				swatch.classList.remove("active");
+				swatch.setAttribute("aria-checked", "false");
+			});
+			else updateColor(currentColor);
+		}
+		function handlePointerDown(event) {
+			if (isBusy || !ctx || !canvas) return;
+			const position = pointerCanvasPosition(event, canvas.getBoundingClientRect(), canvas.width, canvas.height);
+			if (!position) return;
+			const snapshot = takeSnapshot();
+			if (snapshot) {
+				history.push(snapshot);
+				if (undoButton) undoButton.disabled = false;
+			}
+			isDrawing = true;
+			lastPoint = position;
+			drawDot(ctx, position, {
+				backgroundColor: BACKGROUND_COLOR,
+				color: currentColor,
+				isEraser,
+				size: brushSize
+			});
+			canvas.setPointerCapture?.(event.pointerId);
+		}
+		function handlePointerMove(event) {
+			if (!isDrawing || !ctx || !canvas || !lastPoint) return;
+			const position = pointerCanvasPosition(event, canvas.getBoundingClientRect(), canvas.width, canvas.height);
+			if (!position) return;
+			drawLineSegment(ctx, lastPoint, position, {
+				backgroundColor: BACKGROUND_COLOR,
+				color: currentColor,
+				isEraser,
+				size: brushSize
+			});
+			lastPoint = position;
+		}
+		function handlePointerUp(event) {
+			if (!isDrawing) return;
+			isDrawing = false;
+			lastPoint = null;
+			canvas?.releasePointerCapture?.(event.pointerId);
+		}
+		function handleUndo() {
+			if (isBusy || !history.canUndo()) return;
+			const snapshot = history.pop();
+			if (snapshot) restoreSnapshot(snapshot);
+			if (undoButton) undoButton.disabled = !history.canUndo();
+		}
+		function handleClear() {
+			if (isBusy || !ctx || !canvas) return;
+			const snapshot = takeSnapshot();
+			if (snapshot) {
+				history.push(snapshot);
+				if (undoButton) undoButton.disabled = false;
+			}
+			resetCanvas();
+		}
+		async function handleSave() {
+			if (isBusy || !canvas || !uploadUrl) return;
+			setBusy(true);
+			setStatus("Saving drawing...", "info");
+			try {
+				const blob = await new Promise((resolve, reject) => {
+					if (canvas.toBlob) canvas.toBlob((result) => {
+						if (result) resolve(result);
+						else reject(/* @__PURE__ */ new Error("Failed to export drawing."));
+					}, "image/png");
+					else reject(/* @__PURE__ */ new Error("Canvas toBlob not supported."));
+				});
+				const formData = new FormData();
+				formData.append("image", blob, `drawing-${Date.now()}.png`);
+				const data = await csrfFormRequest(uploadUrl, formData, {
+					csrfToken,
+					fallbackMessage: "Failed to save drawing."
+				});
+				await refreshGallery();
+				const filename = data?.image?.filename;
+				showMessage(filename ? `Saved ${filename} to gallery.` : "Drawing saved to gallery.", "success");
+				close();
+			} catch (error) {
+				setStatus(error.message || "Failed to save drawing.", "error");
+			} finally {
+				setBusy(false);
+			}
+		}
+		function open() {
+			if (!overlay) return;
+			initIfNeeded();
+			overlay.hidden = false;
+			setStatus("Illustrate with mouse or pointer, pick colors, and save to gallery.");
+		}
+		function close() {
+			if (!overlay) return;
+			overlay.hidden = true;
+			isDrawing = false;
+			lastPoint = null;
+		}
+		function isOpen() {
+			return Boolean(overlay && !overlay.hidden);
+		}
+		toggleButton?.addEventListener("click", open);
+		closeButton?.addEventListener("click", close);
+		swatches?.forEach((swatch) => {
+			swatch.addEventListener("click", () => {
+				const color = swatch.dataset.color;
+				if (color) updateColor(color);
+			});
+		});
+		colorPicker?.addEventListener("input", (event) => {
+			updateColor(event.target.value);
+		});
+		brushSizeInput?.addEventListener("input", (event) => {
+			updateBrushSize(event.target.value);
+		});
+		eraserButton?.addEventListener("click", toggleEraser);
+		undoButton?.addEventListener("click", handleUndo);
+		clearButton?.addEventListener("click", handleClear);
+		saveButton?.addEventListener("click", handleSave);
+		canvas?.addEventListener("pointerdown", handlePointerDown);
+		canvas?.addEventListener("pointermove", handlePointerMove);
+		canvas?.addEventListener("pointerup", handlePointerUp);
+		canvas?.addEventListener("pointercancel", handlePointerUp);
+		canvas?.addEventListener("pointerleave", handlePointerUp);
+		return {
+			close,
+			isOpen,
+			open
+		};
+	}
+	//#endregion
 	//#region src/imagegen/frontend/immich-import.js
 	var IMPORT_ICON_PATH = "M19.35 10.04A7.49 7.49 0 0 0 12 4 7.5 7.5 0 0 0 5.35 8.04 6 6 0 0 0 6 20h13a5 5 0 0 0 .35-9.96zM14 12h3l-5 5-5-5h3V8h4z";
 	function setupImmichImport(root = document, services = {}) {
@@ -2065,6 +2342,7 @@
 		let generationWorkflow = null;
 		let imageEditorWorkflow = null;
 		let uploadWorkflow = null;
+		let drawPadWorkflow = null;
 		function selectedProvider() {
 			return providerSelector?.value || null;
 		}
@@ -2305,6 +2583,11 @@
 			csrfToken,
 			refreshGallery
 		});
+		drawPadWorkflow = setupDrawPad(documentRoot, {
+			csrfToken,
+			refreshGallery,
+			showMessage
+		});
 		galleryWorkflow = setupGallery(documentRoot, {
 			csrfToken,
 			metadata: metadataWorkflow,
@@ -2351,6 +2634,10 @@
 			updateSourceSelectionUi();
 		});
 		documentRoot.addEventListener("keydown", (event) => {
+			if (event.key === "Escape" && drawPadWorkflow.isOpen()) {
+				drawPadWorkflow.close();
+				return;
+			}
 			if (event.key === "Escape" && imageEditorWorkflow.isOpen()) {
 				imageEditorWorkflow.close();
 				return;
