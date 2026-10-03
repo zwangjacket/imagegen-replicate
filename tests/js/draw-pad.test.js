@@ -35,7 +35,13 @@ function renderDrawPadWorkspace() {
             <button class="draw-swatch" type="button" data-color="#ef4444" aria-label="Red" aria-checked="false"></button>
             <button class="draw-swatch" type="button" data-color="#3b82f6" aria-label="Blue" aria-checked="false"></button>
           </div>
-          <input class="draw-color-picker" type="color" value="#000000" aria-label="Custom color picker">
+          <div class="draw-palette-divider" aria-hidden="true"></div>
+          <label class="draw-color-override" title="Custom color override">
+            <span class="draw-color-override-label">Custom</span>
+            <span class="draw-color-picker-wrap">
+              <input class="draw-color-picker" type="color" value="#000000" aria-label="Custom color picker">
+            </span>
+          </label>
           <div class="draw-brush-size-wrap">
             <input id="draw-brush-size" class="draw-brush-size" type="range" min="1" max="64" value="6">
             <span class="draw-brush-size-value">6 px</span>
@@ -148,23 +154,37 @@ describe("setupDrawPad", () => {
 
     const redSwatch = document.querySelector('.draw-swatch[data-color="#ef4444"]');
     const colorPicker = document.querySelector(".draw-color-picker");
+    const colorOverride = document.querySelector(".draw-color-override");
+
+    expect(redSwatch.style.backgroundColor).toBe("rgb(239, 68, 68)");
 
     redSwatch.click();
     expect(redSwatch.classList.contains("active")).toBe(true);
     expect(redSwatch.getAttribute("aria-checked")).toBe("true");
     expect(colorPicker.value).toBe("#ef4444");
+    expect(colorOverride.classList.contains("active")).toBe(false);
   });
 
-  it("updates custom color through color picker input", () => {
+  it("updates custom color through color picker input and highlights color override", () => {
     setupDrawPad(document);
     document.querySelector(".draw-toggle").click();
 
     const colorPicker = document.querySelector(".draw-color-picker");
+    const colorOverride = document.querySelector(".draw-color-override");
+
+    // Setting to a preset color highlights matching swatch
     colorPicker.value = "#3b82f6";
     colorPicker.dispatchEvent(new Event("input"));
 
     const blueSwatch = document.querySelector('.draw-swatch[data-color="#3b82f6"]');
     expect(blueSwatch.classList.contains("active")).toBe(true);
+    expect(colorOverride.classList.contains("active")).toBe(false);
+
+    // Setting to a custom color not in palette activates color override
+    colorPicker.value = "#123456";
+    colorPicker.dispatchEvent(new Event("input"));
+    expect(blueSwatch.classList.contains("active")).toBe(false);
+    expect(colorOverride.classList.contains("active")).toBe(true);
   });
 
   it("adjusts brush size and updates label", () => {

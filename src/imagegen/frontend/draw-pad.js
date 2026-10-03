@@ -27,6 +27,7 @@ export function setupDrawPad(root = document, services = {}) {
   const titleElement = overlay?.querySelector("#draw-title");
   const canvas = overlay?.querySelector(".draw-canvas");
   const colorPicker = overlay?.querySelector(".draw-color-picker");
+  const colorOverrideWrap = overlay?.querySelector(".draw-color-override");
   const swatches = overlay?.querySelectorAll(".draw-swatch");
   const brushSizeInput = overlay?.querySelector(".draw-brush-size");
   const brushSizeValue = overlay?.querySelector(".draw-brush-size-value");
@@ -130,11 +131,18 @@ export function setupDrawPad(root = document, services = {}) {
     if (colorPicker && colorPicker.value !== color) {
       colorPicker.value = color;
     }
+    let matchedSwatch = false;
     swatches?.forEach((swatch) => {
       const match = swatch.dataset.color?.toLowerCase() === color.toLowerCase();
+      if (match) {
+        matchedSwatch = true;
+      }
       swatch.classList.toggle("active", match);
       swatch.setAttribute("aria-checked", String(match));
     });
+    if (colorOverrideWrap) {
+      colorOverrideWrap.classList.toggle("active", !matchedSwatch);
+    }
   }
 
   function updateBrushSize(size) {
@@ -158,6 +166,9 @@ export function setupDrawPad(root = document, services = {}) {
         swatch.classList.remove("active");
         swatch.setAttribute("aria-checked", "false");
       });
+      if (colorOverrideWrap) {
+        colorOverrideWrap.classList.remove("active");
+      }
     } else {
       updateColor(currentColor);
     }
@@ -350,8 +361,11 @@ export function setupDrawPad(root = document, services = {}) {
   closeButton?.addEventListener("click", close);
 
   swatches?.forEach((swatch) => {
+    const color = swatch.dataset.color;
+    if (color) {
+      swatch.style.backgroundColor = color;
+    }
     swatch.addEventListener("click", () => {
-      const color = swatch.dataset.color;
       if (color) {
         updateColor(color);
       }
