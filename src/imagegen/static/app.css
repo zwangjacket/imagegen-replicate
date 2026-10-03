@@ -1515,44 +1515,54 @@ select {
   transform: scale(1.15);
 }
 
-.draw-swatch[data-color="#000000"] {
+.draw-swatch[data-color="#000000"],
+.draw-swatch-black {
   background-color: #000000;
 }
 
-.draw-swatch[data-color="#4b5563"] {
+.draw-swatch[data-color="#4b5563"],
+.draw-swatch-gray {
   background-color: #4b5563;
 }
 
-.draw-swatch[data-color="#ffffff"] {
+.draw-swatch[data-color="#ffffff"],
+.draw-swatch-white {
   background-color: #ffffff;
   border-color: #94a3b8;
 }
 
-.draw-swatch[data-color="#ef4444"] {
+.draw-swatch[data-color="#ef4444"],
+.draw-swatch-red {
   background-color: #ef4444;
 }
 
-.draw-swatch[data-color="#f97316"] {
+.draw-swatch[data-color="#f97316"],
+.draw-swatch-orange {
   background-color: #f97316;
 }
 
-.draw-swatch[data-color="#eab308"] {
+.draw-swatch[data-color="#eab308"],
+.draw-swatch-yellow {
   background-color: #eab308;
 }
 
-.draw-swatch[data-color="#22c55e"] {
+.draw-swatch[data-color="#22c55e"],
+.draw-swatch-green {
   background-color: #22c55e;
 }
 
-.draw-swatch[data-color="#3b82f6"] {
+.draw-swatch[data-color="#3b82f6"],
+.draw-swatch-blue {
   background-color: #3b82f6;
 }
 
-.draw-swatch[data-color="#a855f7"] {
+.draw-swatch[data-color="#a855f7"],
+.draw-swatch-purple {
   background-color: #a855f7;
 }
 
-.draw-swatch[data-color="#78350f"] {
+.draw-swatch[data-color="#78350f"],
+.draw-swatch-brown {
   background-color: #78350f;
 }
 
@@ -1618,28 +1628,23 @@ select {
   box-shadow: 0 0 0 2px #ffffff, 0 0 0 3px #0f766e;
 }
 
+.draw-color-picker-swatch {
+  background-color: #000000;
+  border-radius: 4px;
+  display: block;
+  height: 100%;
+  pointer-events: none;
+  width: 100%;
+}
+
 .draw-color-picker {
-  -webkit-appearance: none;
-  appearance: none;
-  border: none;
-  border-radius: 0;
   cursor: pointer;
-  height: 200%;
-  margin: -50%;
-  padding: 0;
-  width: 200%;
-}
-
-.draw-color-picker::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.draw-color-picker::-webkit-color-swatch {
-  border: none;
-}
-
-.draw-color-picker::-moz-color-swatch {
-  border: none;
+  height: 100%;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
 }
 
 .draw-brush-size-wrap {

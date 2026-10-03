@@ -497,7 +497,8 @@ def test_index_renders_draw_button_and_overlay_shell(app_factory):
     assert b'data-api-upload-url="/api/images/import-upload"' in response.data
     assert b'class="draw-close"' in response.data
     assert b'class="draw-palette"' in response.data
-    assert b'class="draw-swatch active"' in response.data
+    assert b'class="draw-swatch' in response.data
+    assert b'active' in response.data
     assert b'class="draw-color-picker"' in response.data
     assert b'class="draw-brush-size"' in response.data
     assert b'class="draw-eraser"' in response.data

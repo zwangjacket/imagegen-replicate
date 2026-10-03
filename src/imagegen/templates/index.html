@@ -461,21 +461,22 @@
         </div>
         <div class="draw-toolbar">
           <div class="draw-palette" role="radiogroup" aria-label="Color palette">
-            <button class="draw-swatch active" type="button" data-color="#000000" aria-label="Black" aria-checked="true"></button>
-            <button class="draw-swatch" type="button" data-color="#4b5563" aria-label="Gray" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#ffffff" aria-label="White" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#ef4444" aria-label="Red" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#f97316" aria-label="Orange" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#eab308" aria-label="Yellow" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#22c55e" aria-label="Green" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#3b82f6" aria-label="Blue" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#a855f7" aria-label="Purple" aria-checked="false"></button>
-            <button class="draw-swatch" type="button" data-color="#78350f" aria-label="Brown" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-black active" type="button" data-color="#000000" aria-label="Black" aria-checked="true"></button>
+            <button class="draw-swatch draw-swatch-gray" type="button" data-color="#4b5563" aria-label="Gray" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-white" type="button" data-color="#ffffff" aria-label="White" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-red" type="button" data-color="#ef4444" aria-label="Red" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-orange" type="button" data-color="#f97316" aria-label="Orange" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-yellow" type="button" data-color="#eab308" aria-label="Yellow" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-green" type="button" data-color="#22c55e" aria-label="Green" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-blue" type="button" data-color="#3b82f6" aria-label="Blue" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-purple" type="button" data-color="#a855f7" aria-label="Purple" aria-checked="false"></button>
+            <button class="draw-swatch draw-swatch-brown" type="button" data-color="#78350f" aria-label="Brown" aria-checked="false"></button>
           </div>
           <div class="draw-palette-divider" aria-hidden="true"></div>
           <label class="draw-color-override" title="Custom color override">
             <span class="draw-color-override-label">Custom</span>
             <span class="draw-color-picker-wrap">
+              <span class="draw-color-picker-swatch" aria-hidden="true"></span>
               <input class="draw-color-picker" type="color" value="#000000" aria-label="Custom color picker">
             </span>
           </label>

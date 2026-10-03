@@ -27,6 +27,7 @@ export function setupDrawPad(root = document, services = {}) {
   const titleElement = overlay?.querySelector("#draw-title");
   const canvas = overlay?.querySelector(".draw-canvas");
   const colorPicker = overlay?.querySelector(".draw-color-picker");
+  const colorPickerSwatch = overlay?.querySelector(".draw-color-picker-swatch");
   const colorOverrideWrap = overlay?.querySelector(".draw-color-override");
   const swatches = overlay?.querySelectorAll(".draw-swatch");
   const brushSizeInput = overlay?.querySelector(".draw-brush-size");
@@ -130,6 +131,9 @@ export function setupDrawPad(root = document, services = {}) {
     }
     if (colorPicker && colorPicker.value !== color) {
       colorPicker.value = color;
+    }
+    if (colorPickerSwatch) {
+      colorPickerSwatch.style.backgroundColor = color;
     }
     let matchedSwatch = false;
     swatches?.forEach((swatch) => {
@@ -373,6 +377,9 @@ export function setupDrawPad(root = document, services = {}) {
   });
 
   colorPicker?.addEventListener("input", (event) => {
+    updateColor(event.target.value);
+  });
+  colorPicker?.addEventListener("change", (event) => {
     updateColor(event.target.value);
   });
 

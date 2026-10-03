@@ -39,6 +39,7 @@ function renderDrawPadWorkspace() {
           <label class="draw-color-override" title="Custom color override">
             <span class="draw-color-override-label">Custom</span>
             <span class="draw-color-picker-wrap">
+              <span class="draw-color-picker-swatch" aria-hidden="true"></span>
               <input class="draw-color-picker" type="color" value="#000000" aria-label="Custom color picker">
             </span>
           </label>
@@ -162,6 +163,9 @@ describe("setupDrawPad", () => {
     expect(redSwatch.classList.contains("active")).toBe(true);
     expect(redSwatch.getAttribute("aria-checked")).toBe("true");
     expect(colorPicker.value).toBe("#ef4444");
+    expect(
+      document.querySelector(".draw-color-picker-swatch").style.backgroundColor,
+    ).toBe("rgb(239, 68, 68)");
     expect(colorOverride.classList.contains("active")).toBe(false);
   });
 
@@ -170,6 +174,7 @@ describe("setupDrawPad", () => {
     document.querySelector(".draw-toggle").click();
 
     const colorPicker = document.querySelector(".draw-color-picker");
+    const colorPickerSwatch = document.querySelector(".draw-color-picker-swatch");
     const colorOverride = document.querySelector(".draw-color-override");
 
     // Setting to a preset color highlights matching swatch
@@ -178,13 +183,20 @@ describe("setupDrawPad", () => {
 
     const blueSwatch = document.querySelector('.draw-swatch[data-color="#3b82f6"]');
     expect(blueSwatch.classList.contains("active")).toBe(true);
+    expect(colorPickerSwatch.style.backgroundColor).toBe("rgb(59, 130, 246)");
     expect(colorOverride.classList.contains("active")).toBe(false);
 
     // Setting to a custom color not in palette activates color override
     colorPicker.value = "#123456";
     colorPicker.dispatchEvent(new Event("input"));
     expect(blueSwatch.classList.contains("active")).toBe(false);
+    expect(colorPickerSwatch.style.backgroundColor).toBe("rgb(18, 52, 86)");
     expect(colorOverride.classList.contains("active")).toBe(true);
+
+    // Change event also updates color and preview swatch
+    colorPicker.value = "#22c55e";
+    colorPicker.dispatchEvent(new Event("change"));
+    expect(colorPickerSwatch.style.backgroundColor).toBe("rgb(34, 197, 94)");
   });
 
   it("adjusts brush size and updates label", () => {

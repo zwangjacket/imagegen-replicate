@@ -599,6 +599,7 @@
 		const titleElement = overlay?.querySelector("#draw-title");
 		const canvas = overlay?.querySelector(".draw-canvas");
 		const colorPicker = overlay?.querySelector(".draw-color-picker");
+		const colorPickerSwatch = overlay?.querySelector(".draw-color-picker-swatch");
 		const colorOverrideWrap = overlay?.querySelector(".draw-color-override");
 		const swatches = overlay?.querySelectorAll(".draw-swatch");
 		const brushSizeInput = overlay?.querySelector(".draw-brush-size");
@@ -672,6 +673,7 @@
 				eraserButton.classList.remove("draw-tool-active");
 			}
 			if (colorPicker && colorPicker.value !== color) colorPicker.value = color;
+			if (colorPickerSwatch) colorPickerSwatch.style.backgroundColor = color;
 			let matchedSwatch = false;
 			swatches?.forEach((swatch) => {
 				const match = swatch.dataset.color?.toLowerCase() === color.toLowerCase();
@@ -824,6 +826,9 @@
 			});
 		});
 		colorPicker?.addEventListener("input", (event) => {
+			updateColor(event.target.value);
+		});
+		colorPicker?.addEventListener("change", (event) => {
 			updateColor(event.target.value);
 		});
 		brushSizeInput?.addEventListener("input", (event) => {
